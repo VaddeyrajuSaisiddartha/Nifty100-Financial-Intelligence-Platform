@@ -39,16 +39,6 @@ interface LocalDB {
 }
 
 const loadDB = (): LocalDB => {
-  if (fs.existsSync(DB_FILE)) {
-    try {
-      const parsed = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
-      if (!parsed.savedChats) parsed.savedChats = {};
-      if (!parsed.pendingResets) parsed.pendingResets = {};
-      return parsed;
-    } catch {
-      // fallback
-    }
-  }
   const defaultDB: LocalDB = {
     users: {},
     watchlists: {},
@@ -63,12 +53,65 @@ const loadDB = (): LocalDB => {
     ],
     marketIndexValue: 23545.80
   };
-  fs.writeFileSync(DB_FILE, JSON.stringify(defaultDB, null, 2));
+
+  if (fs.existsSync(DB_FILE)) {
+    try {
+      const data = fs.readFileSync(DB_FILE, 'utf-8').trim();
+      if (!data) {
+        fs.writeFileSync(DB_FILE, JSON.stringify(defaultDB, null, 2), 'utf-8');
+        return defaultDB;
+      }
+      const parsed = JSON.parse(data);
+      const merged: LocalDB = {
+        users: parsed.users || {},
+        watchlists: parsed.watchlists || {},
+        savedChats: parsed.savedChats || {},
+        pendingResets: parsed.pendingResets || {},
+        dailyLogs: Array.isArray(parsed.dailyLogs) ? parsed.dailyLogs : defaultDB.dailyLogs,
+        marketIndexValue: typeof parsed.marketIndexValue === 'number' ? parsed.marketIndexValue : defaultDB.marketIndexValue
+      };
+      return merged;
+    } catch (e) {
+      console.error("Database loading or parsing failed, falling back to clean defaults:", e);
+      try {
+        fs.renameSync(DB_FILE, `${DB_FILE}.corrupt-${Date.now()}`);
+      } catch (backupErr) {
+        // ignore
+      }
+      try {
+        if (!fs.existsSync(DB_DIR)) {
+          fs.mkdirSync(DB_DIR, { recursive: true });
+        }
+        fs.writeFileSync(DB_FILE, JSON.stringify(defaultDB, null, 2), 'utf-8');
+      } catch (writeErr) {
+        // ignore
+      }
+      return defaultDB;
+    }
+  }
+
+  try {
+    if (!fs.existsSync(DB_DIR)) {
+      fs.mkdirSync(DB_DIR, { recursive: true });
+    }
+    fs.writeFileSync(DB_FILE, JSON.stringify(defaultDB, null, 2), 'utf-8');
+  } catch (err) {
+    console.error("Failed to write initial default database file:", err);
+  }
   return defaultDB;
 };
 
 const saveDB = (db: LocalDB) => {
-  fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
+  try {
+    if (!fs.existsSync(DB_DIR)) {
+      fs.mkdirSync(DB_DIR, { recursive: true });
+    }
+    const tempFile = `${DB_FILE}.tmp`;
+    fs.writeFileSync(tempFile, JSON.stringify(db, null, 2), 'utf-8');
+    fs.renameSync(tempFile, DB_FILE);
+  } catch (error) {
+    console.error("Database save operation failed:", error);
+  }
 };
 
 async function startServer() {
