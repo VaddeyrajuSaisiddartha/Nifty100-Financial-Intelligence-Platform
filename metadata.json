@@ -1,0 +1,6 @@
+{
+  "name": "Nifty 100 Intelligence",
+  "description": "Premium AI-powered financial intelligence and stock analytics platform tracking balance sheets, ledger anomalies, and regulatory compliance of BSI 100 corporations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
