@@ -7,6 +7,15 @@
   --font-display: "Space Grotesk", sans-serif;
 }
 
+html, body {
+  background-color: #020617 !important;
+  color: #f1f5f9 !important;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  width: 100%;
+}
+
 /* Beautiful custom animations and premium trading terminal tweaks */
 @keyframes pulse-ring {
   0% { transform: scale(0.95); opacity: 0.5; }

@@ -28,8 +28,7 @@ interface LocalDB {
     country?: string;
     fullName?: string;
     companyTitle?: string;
-    linkedinUrl?: string;
-    githubUrl?: string;
+    mobileNumber?: string;
   }>;
   watchlists: Record<string, string[]>; // username -> symbols
   dailyLogs: { timestamp: string; message: string; type: string }[];
@@ -336,13 +335,15 @@ async function startServer() {
 
   // --- API ROUTE: USER REGISTER ---
   const registerHandler = (req: express.Request, res: express.Response) => {
-    const { username, email, password, fullName, companyTitle, country, linkedinUrl, githubUrl } = req.body;
-    if (!username || !password || !email || !fullName || !companyTitle || !linkedinUrl || !githubUrl) {
-      return res.status(400).json({ error: "All account fields are strictly required: Username, Passphrase, Email, Full Name, Title/Company, LinkedIn Profile Link, and GitHub Profile Link." });
+    const { username, mobileNumber, email, password, fullName, companyTitle, country } = req.body;
+    const finalName = (fullName || username || "").trim();
+    const finalMobile = (mobileNumber || "").trim();
+    if (!finalName || !password || !email || !finalMobile || !companyTitle) {
+      return res.status(400).json({ error: "All account fields are strictly required: Full Name, Passphrase, Email, Mobile Number, and Role/Specialization." });
     }
-    const lowerUsername = username.trim().toLowerCase();
+    const lowerUsername = finalName.toLowerCase();
     if (dbInstance.users[lowerUsername]) {
-      return res.status(400).json({ error: "This Analyst ID is already registered in the central node." });
+      return res.status(400).json({ error: "This Full Name is already registered in the central node." });
     }
 
     // Validate password pattern: Capital, lowercase, special character, number, >= 8 chars
@@ -367,11 +368,10 @@ async function startServer() {
       id: crypto.randomUUID(),
       username: lowerUsername,
       email: cleanEmail,
-      fullName: fullName.trim(),
+      fullName: finalName,
       companyTitle: companyTitle.trim(),
       country: (country || 'India').trim(),
-      linkedinUrl: linkedinUrl.trim(),
-      githubUrl: githubUrl.trim(),
+      mobileNumber: finalMobile,
       passwordHash,
       createdAt: new Date().toISOString(),
       emailVerified: true
@@ -381,7 +381,7 @@ async function startServer() {
     dbInstance.watchlists[lowerUsername] = ["TCS", "HDFCBANK", "RELIANCE"]; // preseed watchlist
     saveDB(dbInstance);
 
-    console.log(`\n========================================================\n[REGISTRATION SYSTEM] SUCCESSFUL REGISTRATION FOR ${cleanEmail}\nLinkedIn URL: ${linkedinUrl}\nGitHub URL: ${githubUrl}\n========================================================\n`);
+    console.log(`\n========================================================\n[REGISTRATION SYSTEM] SUCCESSFUL REGISTRATION FOR ${cleanEmail}\nFull Name: ${finalName}\nMobile Number: ${finalMobile}\n========================================================\n`);
 
     const token = generateJWT(newUser.id, lowerUsername);
     res.setHeader('Set-Cookie', `session_user=${encodeURIComponent(lowerUsername)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000`);
@@ -396,6 +396,7 @@ async function startServer() {
         fullName: newUser.fullName,
         companyTitle: newUser.companyTitle,
         country: newUser.country,
+        mobileNumber: newUser.mobileNumber,
         createdAt: newUser.createdAt
       }
     });
@@ -512,15 +513,15 @@ async function startServer() {
 
     res.json({
       success: true,
-      message: "Found matching registry credentials. Authorize reset by verifying your registered LinkedIn & GitHub links."
+      message: "Found matching registry credentials. Authorize reset by verifying your registered Mobile Number."
     });
   });
 
   // --- API ROUTE: USER VERIFY PROFILE LINKS & RESET PASSWORD ---
   app.post('/api/forgot-password/verify', (req, res) => {
-    const { email, linkedinUrl, githubUrl, newPassword } = req.body;
-    if (!email || !linkedinUrl || !githubUrl || !newPassword) {
-      return res.status(400).json({ error: "Verification parameters 'email', 'linkedinUrl', 'githubUrl', and 'newPassword' are all strictly required." });
+    const { email, mobileNumber, newPassword } = req.body;
+    if (!email || !mobileNumber || !newPassword) {
+      return res.status(400).json({ error: "Verification parameters 'email', 'mobileNumber', and 'newPassword' are all strictly required to recover your account." });
     }
 
     const lowerEmail = email.trim().toLowerCase();
@@ -528,24 +529,17 @@ async function startServer() {
     // Find the user to update
     const matchingUsers = Object.keys(dbInstance.users).filter(k => dbInstance.users[k].email.toLowerCase() === lowerEmail);
     if (matchingUsers.length === 0) {
-      return res.status(404).json({ error: "User profile associated with this email was not found." });
+      return res.status(404).json({ error: "User profile associated with this email was not located." });
     }
 
     const userKey = matchingUsers[0];
     const user = dbInstance.users[userKey];
 
-    const cleanEnteredLi = linkedinUrl.trim().toLowerCase().replace(/\/$/, "");
-    const cleanRegisteredLi = (user.linkedinUrl || "").trim().toLowerCase().replace(/\/$/, "");
+    const cleanEnteredMobile = mobileNumber.trim();
+    const cleanRegisteredMobile = (user.mobileNumber || user.username || "").trim();
 
-    const cleanEnteredGh = githubUrl.trim().toLowerCase().replace(/\/$/, "");
-    const cleanRegisteredGh = (user.githubUrl || "").trim().toLowerCase().replace(/\/$/, "");
-
-    if (cleanEnteredLi !== cleanRegisteredLi) {
-      return res.status(400).json({ error: "Verified failed: The LinkedIn Profile Link does not match our registered records." });
-    }
-
-    if (cleanEnteredGh !== cleanRegisteredGh) {
-      return res.status(400).json({ error: "Verified failed: The GitHub Profile Link does not match our registered records." });
+    if (cleanEnteredMobile !== cleanRegisteredMobile) {
+      return res.status(400).json({ error: "Verification failed: The Mobile Number does not match our registered records." });
     }
 
     // Hash new password

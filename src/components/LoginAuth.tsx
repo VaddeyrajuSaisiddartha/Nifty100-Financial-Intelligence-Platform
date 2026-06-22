@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserPlus, LogIn, ShieldAlert, Key, User as UserIcon, HelpCircle, Eye, EyeOff, Lock } from 'lucide-react';
+import { UserPlus, LogIn, ShieldAlert, Key, User as UserIcon, HelpCircle, Eye, EyeOff, Lock, Phone } from 'lucide-react';
 
 interface LoginAuthProps {
   onLoginSuccess: (user: any, token: string) => void;
@@ -11,16 +11,14 @@ export default function LoginAuth({
   const [activeTab, setActiveTab] = useState<'login' | 'register' | 'forgot'>('login');
   
   // Fields state
-  const [username, setUsername] = useState('');
+  const [mobileNumber, setMobileNumber] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
   // High-Security Personal Context fields
   const [fullName, setFullName] = useState('');
-  const [companyTitle, setCompanyTitle] = useState('');
+  const [companyTitle, setCompanyTitle] = useState('Student');
   const [email, setEmail] = useState('');
-  const [linkedinUrl, setLinkedinUrl] = useState('');
-  const [githubUrl, setGithubUrl] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('India');
   
   // Forgot Password Validation Fields
@@ -53,14 +51,25 @@ export default function LoginAuth({
     'South Africa', 'Switzerland', 'Netherlands', 'Brazil', 'Saudi Arabia'
   ];
 
+  const REGISTER_ROLES = [
+    'Student',
+    'Business Owner / Businessman',
+    'Strategic Corporate Allocator',
+    'Equity Research Analyst',
+    'Portfolio Fund Manager',
+    'Retail Investor',
+    'Corporate Executive',
+    'Financial Professional'
+  ];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
 
     if (activeTab === 'forgot') {
-      if (!email.trim() || !linkedinUrl.trim() || !githubUrl.trim() || !newPassword.trim()) {
-        setErrorMsg('All validation fields are strictly required: Email, LinkedIn Profile Link, GitHub Profile Link, and New Password.');
+      if (!email.trim() || !mobileNumber.trim() || !newPassword.trim()) {
+        setErrorMsg('All validation fields are strictly required: Email, Mobile Number, and New Password.');
         return;
       }
       if (!isNewPasswordValid) {
@@ -77,11 +86,11 @@ export default function LoginAuth({
         const response = await fetch('/api/forgot-password/verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, linkedinUrl, githubUrl, newPassword })
+          body: JSON.stringify({ email, mobileNumber, newPassword })
         });
         const resData = await response.json();
         if (!response.ok) {
-          setErrorMsg(resData.error || 'Verification check failed. Confirm LinkedIn and GitHub Profile links match registered values.');
+          setErrorMsg(resData.error || 'Verification check failed. Confirm Mobile Number fields match registered values.');
         } else {
           setSuccessMsg(resData.message);
           setTimeout(() => {
@@ -99,14 +108,16 @@ export default function LoginAuth({
       return;
     }
 
-    if (!username.trim() || !password.trim()) {
-      setErrorMsg('All credential fields must be filled.');
-      return;
+    if (activeTab === 'login') {
+      if (!fullName.trim() || !password.trim()) {
+        setErrorMsg('All credential fields must be filled: Full Legal Name and Secret Pass Phrase.');
+        return;
+      }
     }
 
     if (activeTab === 'register') {
-      if (!fullName.trim() || !companyTitle.trim() || !email.trim() || !linkedinUrl.trim() || !githubUrl.trim()) {
-        setErrorMsg('All registration parameters are required: Name, Title, Email address, LinkedIn Profile, and GitHub Profile.');
+      if (!fullName.trim() || !password.trim() || !confirmPassword.trim() || !email.trim() || !companyTitle.trim() || !mobileNumber.trim()) {
+        setErrorMsg('All registration parameters are required: Full Legal Name, Secret Pass Phrase, Verify Pass Phrase, Corporate Role, Work Email, and Mobile Number.');
         return;
       }
       if (!isPasswordValid) {
@@ -124,8 +135,8 @@ export default function LoginAuth({
     try {
       const endpoint = activeTab === 'login' ? '/api/login' : '/api/register';
       const body = activeTab === 'login' 
-        ? { username, password } 
-        : { username, password, email, fullName, companyTitle, country: selectedCountry, linkedinUrl, githubUrl };
+        ? { username: fullName, password } 
+        : { username: fullName, mobileNumber, password, email, fullName, companyTitle, country: selectedCountry };
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -254,7 +265,7 @@ export default function LoginAuth({
               activeTab === 'forgot' ? 'text-indigo-400 border-indigo-500 bg-slate-900/50' : 'text-slate-500 border-transparent hover:text-slate-350'
             }`}
           >
-            RECOVER SECRET KEY
+            RECOVER YOUR ACCOUNT
           </button>
         </div>
 
@@ -279,7 +290,7 @@ export default function LoginAuth({
             <div className="space-y-4">
               <div className="p-3 bg-indigo-950/40 border border-indigo-900/40 rounded-xl">
                 <p className="text-[11px] text-indigo-300 font-sans leading-relaxed">
-                  Enter your registered Account Email, along with your LinkedIn and GitHub Profile links created at registration to verify identity and configure a new secure passphrase.
+                  Enter your registered Account Email and Mobile Number created at registration to verify identity and recover your account.
                 </p>
               </div>
 
@@ -299,32 +310,16 @@ export default function LoginAuth({
                 </div>
               </div>
 
-              {/* LinkedIn URL verification */}
+              {/* Mobile Number verification */}
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-400 font-mono uppercase block">Registered LinkedIn Link</label>
+                <label className="text-[10px] text-slate-400 font-mono uppercase block">Registered Mobile Number</label>
                 <div className="relative">
-                  <UserIcon className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                  <Phone className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
                   <input
-                    type="url"
-                    placeholder="https://linkedin.com/in/yourprofile"
-                    value={linkedinUrl}
-                    onChange={(e) => setLinkedinUrl(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-805 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all font-mono"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* GitHub URL verification */}
-              <div className="space-y-1">
-                <label className="text-[10px] text-slate-400 font-mono uppercase block">Registered GitHub Link</label>
-                <div className="relative">
-                  <UserIcon className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
-                  <input
-                    type="url"
-                    placeholder="https://github.com/yourusername"
-                    value={githubUrl}
-                    onChange={(e) => setGithubUrl(e.target.value)}
+                    type="tel"
+                    placeholder="Enter Registered Mobile Number"
+                    value={mobileNumber}
+                    onChange={(e) => setMobileNumber(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-805 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all font-mono"
                     required
                   />
@@ -386,98 +381,141 @@ export default function LoginAuth({
             </div>
           ) : (
             <>
-              {/* Username Input */}
-              <div className="space-y-1">
-                <label className="text-[10px] text-slate-400 font-mono uppercase block">Username / Account ID</label>
-                <div className="relative">
-                  <UserIcon className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
-                  <input
-                    type="text"
-                    placeholder="e.g., analyst_alpha"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-805 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-slate-605 focus:outline-none focus:border-sky-500 transition-colors font-mono"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Password Input */}
-              <div className="space-y-1">
-                <div className="flex justify-between items-center">
-                  <label className="text-[10px] text-slate-400 font-mono uppercase block">Secret Pass Phrase</label>
-                  {activeTab === 'login' && (
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('forgot')}
-                      className="text-[10px] text-indigo-400 hover:underline hover:text-indigo-305 transition-colors font-mono uppercase"
-                    >
-                      Forgot Key?
-                    </button>
-                  )}
-                </div>
-                <div className="relative">
-                  <Key className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-805 rounded-xl pl-10 pr-10 py-3 text-xs text-white placeholder-slate-605 focus:outline-none focus:border-sky-500 transition-colors font-mono"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-slate-500 hover:text-slate-300"
-                  >
-                    {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
-                  </button>
-                </div>
-
-                {/* Dynamic Password strength indicator */}
-                {activeTab === 'register' && password.length > 0 && (
-                  <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1.5 mt-2 animate-fade-in/10">
-                    <span className="text-[9px] text-slate-400 font-mono uppercase font-bold tracking-wider block">Credential Blueprint:</span>
-                    <div className="grid grid-cols-2 gap-2 text-[10px] font-mono leading-none">
-                      <div className="flex items-center gap-1.5">
-                        <span className={isMinLength ? "text-emerald-450 font-bold" : "text-rose-500 font-bold"}>
-                          {isMinLength ? "✓" : "✗"}
-                        </span>
-                        <span className={isMinLength ? "text-slate-300" : "text-slate-505"}>8+ Chars</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className={hasCapital ? "text-emerald-450 font-bold" : "text-rose-500 font-bold"}>
-                          {hasCapital ? "✓" : "✗"}
-                        </span>
-                        <span className={hasCapital ? "text-slate-300" : "text-slate-505"}>Capital</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className={hasSmall ? "text-emerald-450 font-bold" : "text-rose-500 font-bold"}>
-                          {hasSmall ? "✓" : "✗"}
-                        </span>
-                        <span className={hasSmall ? "text-slate-300" : "text-slate-505"}>Lowercase</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className={hasNumber ? "text-emerald-450 font-bold" : "text-rose-500 font-bold"}>
-                          {hasNumber ? "✓" : "✗"}
-                        </span>
-                        <span className={hasNumber ? "text-slate-300" : "text-slate-550"}>Number (0-9)</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 col-span-2 mt-0.5 pt-1 border-t border-slate-900">
-                        <span className={hasSpecial ? "text-emerald-450 font-bold" : "text-rose-500 font-bold"}>
-                          {hasSpecial ? "✓" : "✗"}
-                        </span>
-                        <span className={hasSpecial ? "text-slate-300" : "text-slate-550"}>Special Char (!, @, #, $, %)</span>
-                      </div>
+              {/* If tab is 'login' render login fields */}
+              {activeTab === 'login' && (
+                <div className="space-y-4">
+                  {/* Full Name for Login */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-slate-400 font-mono uppercase block">Registered Full Name</label>
+                    <div className="relative">
+                      <UserIcon className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                      <input
+                        type="text"
+                        placeholder="Enter Registered Full Name"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-805 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-slate-605 focus:outline-none focus:border-sky-500 transition-colors font-mono"
+                        required
+                      />
                     </div>
                   </div>
-                )}
-              </div>
 
-              {/* Confirm Password (register only) */}
+                  {/* Password Input */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <label className="text-[10px] text-slate-400 font-mono uppercase block">Secret Pass Phrase</label>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('forgot')}
+                        className="text-[10px] text-indigo-400 hover:underline hover:text-indigo-305 transition-colors font-mono uppercase"
+                      >
+                        Forgot Key?
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <Key className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-805 rounded-xl pl-10 pr-10 py-3 text-xs text-white placeholder-slate-605 focus:outline-none focus:border-sky-500 transition-colors font-mono"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-3 text-slate-500 hover:text-slate-300"
+                      >
+                        {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* If tab is 'register' render register fields */}
               {activeTab === 'register' && (
                 <div className="space-y-4">
+                  {/* Full Name for Registration at the top */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-slate-400 font-mono uppercase block">Full Legal Name (Primary ID)</label>
+                    <div className="relative">
+                      <UserIcon className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                      <input
+                        type="text"
+                        placeholder="Enter your full legal name"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-805 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-slate-605 focus:outline-none focus:border-sky-500 transition-colors font-mono"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Password Input */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-slate-400 font-mono uppercase block">Secret Pass Phrase</label>
+                    <div className="relative">
+                      <Key className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-805 rounded-xl pl-10 pr-10 py-3 text-xs text-white placeholder-slate-605 focus:outline-none focus:border-sky-500 transition-colors font-mono"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-3 text-slate-500 hover:text-slate-300"
+                      >
+                        {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+                      </button>
+                    </div>
+
+                    {/* Dynamic Password strength indicator */}
+                    {password.length > 0 && (
+                      <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1.5 mt-2 animate-fade-in/10">
+                        <span className="text-[9px] text-slate-400 font-mono uppercase font-bold tracking-wider block">Credential Blueprint:</span>
+                        <div className="grid grid-cols-2 gap-2 text-[10px] font-mono leading-none">
+                          <div className="flex items-center gap-1.5">
+                            <span className={isMinLength ? "text-emerald-450 font-bold" : "text-rose-500 font-bold"}>
+                              {isMinLength ? "✓" : "✗"}
+                            </span>
+                            <span className={isMinLength ? "text-slate-300" : "text-slate-505"}>8+ Chars</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className={hasCapital ? "text-emerald-450 font-bold" : "text-rose-500 font-bold"}>
+                              {hasCapital ? "✓" : "✗"}
+                            </span>
+                            <span className={hasCapital ? "text-slate-300" : "text-slate-505"}>Capital</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className={hasSmall ? "text-emerald-450 font-bold" : "text-rose-500 font-bold"}>
+                              {hasSmall ? "✓" : "✗"}
+                            </span>
+                            <span className={hasSmall ? "text-slate-300" : "text-slate-505"}>Lowercase</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className={hasNumber ? "text-emerald-450 font-bold" : "text-rose-500 font-bold"}>
+                              {hasNumber ? "✓" : "✗"}
+                            </span>
+                            <span className={hasNumber ? "text-slate-300" : "text-slate-550"}>Number (0-9)</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 col-span-2 mt-0.5 pt-1 border-t border-slate-900">
+                            <span className={hasSpecial ? "text-emerald-450 font-bold" : "text-rose-500 font-bold"}>
+                              {hasSpecial ? "✓" : "✗"}
+                            </span>
+                            <span className={hasSpecial ? "text-slate-300" : "text-slate-550"}>Special Char (!, @, #, $, %)</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Verify Pass Phrase */}
                   <div className="space-y-1">
                     <label className="text-[10px] text-slate-400 font-mono uppercase block">Verify Pass Phrase</label>
                     <div className="relative font-mono">
@@ -493,35 +531,39 @@ export default function LoginAuth({
                     </div>
                   </div>
 
-                  {/* Full Name */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-slate-400 font-mono uppercase block">Full Legal Name</label>
+                  {/* Mobile Number (for discloser recovery) */}
+                  <div className="space-y-1 font-mono">
+                    <label className="text-[10px] text-slate-400 font-mono uppercase block">Mobile Number (For disclosures/recovery)</label>
                     <div className="relative">
-                      <UserIcon className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                      <Phone className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
                       <input
-                        type="text"
-                        placeholder="Enter your full name"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-805 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500 transition-colors"
+                        type="tel"
+                        placeholder="Enter Mobile Number"
+                        value={mobileNumber}
+                        onChange={(e) => setMobileNumber(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-805 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-slate-605 focus:outline-none focus:border-sky-500 transition-colors"
                         required
                       />
                     </div>
                   </div>
 
-                  {/* Strategic Corporate Title / Organization */}
+                  {/* Corporate Organization / Role drop down */}
                   <div className="space-y-1">
-                    <label className="text-[10px] text-slate-400 font-mono uppercase block">Corporate Organization / Specialization</label>
+                    <label className="text-[10px] text-slate-400 font-mono uppercase block">Corporate Organization / Role</label>
                     <div className="relative">
-                      <UserIcon className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
-                      <input
-                        type="text"
-                        placeholder="e.g., Senior Capital Allocator"
+                      <select
                         value={companyTitle}
                         onChange={(e) => setCompanyTitle(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-805 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500 transition-colors"
+                        className="w-full bg-slate-950 border border-slate-805 rounded-xl pl-4 pr-10 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-colors font-mono cursor-pointer appearance-none animate-fade-in"
                         required
-                      />
+                      >
+                        {REGISTER_ROLES.map(role => (
+                          <option key={role} value={role}>{role}</option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                        ▼
+                      </div>
                     </div>
                   </div>
 
@@ -545,8 +587,8 @@ export default function LoginAuth({
                   </div>
 
                   {/* Work Email Address */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-slate-400 font-mono uppercase block">Corporate Email Address</label>
+                  <div className="space-y-1 font-mono">
+                    <label className="text-[10px] text-slate-400 font-mono uppercase block">Corporate Work Email Address</label>
                     <div className="relative">
                       <UserIcon className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
                       <input
@@ -554,38 +596,6 @@ export default function LoginAuth({
                         placeholder="your.email@domain.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-805 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500 transition-all font-mono"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {/* LinkedIn Profile URL */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-slate-400 font-mono uppercase block">LinkedIn Profile Link</label>
-                    <div className="relative">
-                      <UserIcon className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
-                      <input
-                        type="url"
-                        placeholder="https://linkedin.com/in/yourprofile"
-                        value={linkedinUrl}
-                        onChange={(e) => setLinkedinUrl(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-805 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500 transition-all font-mono"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {/* GitHub Profile URL */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-slate-400 font-mono uppercase block">GitHub Profile Link</label>
-                    <div className="relative">
-                      <UserIcon className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
-                      <input
-                        type="url"
-                        placeholder="https://github.com/yourusername"
-                        value={githubUrl}
-                        onChange={(e) => setGithubUrl(e.target.value)}
                         className="w-full bg-slate-950 border border-slate-805 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500 transition-all font-mono"
                         required
                       />
