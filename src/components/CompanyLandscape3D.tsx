@@ -157,6 +157,17 @@ export default function CompanyLandscape3D({ companies, onCompanySelect }: Compa
   const [selectedSector, setSelectedSector] = useState<string>('All');
   const [hoveredCompany, setHoveredCompany] = useState<Company | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [webGlSupported, setWebGlSupported] = useState(true);
+
+  useEffect(() => {
+    try {
+      const canvas = document.createElement('canvas');
+      const supported = !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+      setWebGlSupported(supported);
+    } catch (e) {
+      setWebGlSupported(false);
+    }
+  }, []);
 
   // Extract unique sectors
   const sectors = useMemo(() => {
@@ -175,13 +186,15 @@ export default function CompanyLandscape3D({ companies, onCompanySelect }: Compa
         <div>
           <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-950/40 text-emerald-400 border border-emerald-900/30 font-mono tracking-wider">
             <Layers className="h-3 w-3" />
-            3D SPATIAL TERRAIN VISUALIZER
+            {webGlSupported ? '3D SPATIAL TERRAIN VISUALIZER' : 'ACCESSIBLE CAPITAL DENSITY MATRIX'}
           </span>
           <h3 className="text-sm font-display font-semibold text-white tracking-wide flex items-center gap-1.5 mt-1">
             BSI 100 Market Capitalization Mesh
           </h3>
           <p className="text-[10px] text-slate-500 font-sans mt-0.5">
-            10x10 continuous vertex map. Peaks denote capital weight. Choose a sector below to trigger physical transition animations.
+            {webGlSupported 
+              ? '10x10 continuous vertex map. Peaks denote capital weight. Choose a sector below to trigger physical transition animations.'
+              : 'Interactive layout representing sector peak weights. Choose a sector below to focus on priority asset matrices.'}
           </p>
         </div>
 
@@ -209,31 +222,66 @@ export default function CompanyLandscape3D({ companies, onCompanySelect }: Compa
 
       {/* Visual Canvas layout */}
       <div className="flex-1 relative bg-slate-950">
-        <Canvas
-          camera={{ position: [0, 6.2, 8.5], fov: 45 }}
-          style={{ width: '100%', height: '100%' }}
-        >
-          {/* Ambient space atmosphere illumination */}
-          <ambientLight intensity={0.6} />
-          <pointLight position={[10, 15, 10]} intensity={1.5} />
-          <directionalLight position={[-8, 12, -4]} intensity={0.7} />
-          <spotLight position={[0, 15, 0]} angle={0.3} penumbra={1} intensity={2} color="#10b981" />
-          
-          <TerrainMesh
-            companies={companies}
-            selectedSector={selectedSector}
-            onHoverVertex={handleHoverVertex}
-            onClickVertex={onCompanySelect}
-            hoveredIndex={hoveredIndex}
-          />
+        {webGlSupported ? (
+          <Canvas
+            camera={{ position: [0, 6.2, 8.5], fov: 45 }}
+            style={{ width: '100%', height: '100%' }}
+          >
+            {/* Ambient space atmosphere illumination */}
+            <ambientLight intensity={0.6} />
+            <pointLight position={[10, 15, 10]} intensity={1.5} />
+            <directionalLight position={[-8, 12, -4]} intensity={0.7} />
+            <spotLight position={[0, 15, 0]} angle={0.3} penumbra={1} intensity={2} color="#10b981" />
+            
+            <TerrainMesh
+              companies={companies}
+              selectedSector={selectedSector}
+              onHoverVertex={handleHoverVertex}
+              onClickVertex={onCompanySelect}
+              hoveredIndex={hoveredIndex}
+            />
 
-          <OrbitControls 
-            enableZoom={true} 
-            maxPolarAngle={Math.PI / 2.1} 
-            minDistance={4} 
-            maxDistance={15} 
-          />
-        </Canvas>
+            <OrbitControls 
+              enableZoom={true} 
+              maxPolarAngle={Math.PI / 2.1} 
+              minDistance={4} 
+              maxDistance={15} 
+            />
+          </Canvas>
+        ) : (
+          <div className="absolute inset-0 p-6 overflow-y-auto bg-slate-950 flex flex-col justify-between">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {companies
+                .filter(c => selectedSector === 'All' || c.sector === selectedSector)
+                .slice(0, 15)
+                .map((c, i) => (
+                  <div
+                    key={c.symbol}
+                    onMouseEnter={() => handleHoverVertex(c, i)}
+                    onMouseLeave={() => handleHoverVertex(null, -1)}
+                    onClick={() => onCompanySelect(c.symbol)}
+                    className="bg-slate-900 border border-slate-800 hover:border-emerald-500 p-3 rounded-xl transition-all cursor-pointer hover:bg-slate-850 flex flex-col justify-between h-28 space-y-2 group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-mono font-bold text-white tracking-widest group-hover:text-emerald-400">{c.symbol}</span>
+                      <span className="text-[9px] bg-slate-950 text-emerald-450 px-1.5 py-0.5 rounded border border-emerald-900/60 font-bold">
+                        {c.roe}%
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] text-slate-400 font-display truncate">{c.name}</p>
+                      <div className="h-1 bg-slate-950 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full animate-pulse"
+                          style={{ width: `${Math.min(100, Math.max(10, c.roe * 2.5))}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
 
         {/* Floating Context Panel HUD overlay */}
         {hoveredCompany ? (

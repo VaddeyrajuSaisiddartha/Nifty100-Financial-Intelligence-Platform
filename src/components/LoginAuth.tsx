@@ -53,13 +53,16 @@ export default function LoginAuth({
 
   const REGISTER_ROLES = [
     'Student',
-    'Business Owner / Businessman',
-    'Strategic Corporate Allocator',
+    'Business Owner / Businessman / Entrepreneur',
+    'Investment Banker / Capital Allocator',
+    'Portfolio & Fund Manager',
     'Equity Research Analyst',
-    'Portfolio Fund Manager',
-    'Retail Investor',
-    'Corporate Executive',
-    'Financial Professional'
+    'Retail Investor / Day Trader',
+    'Corporate Executive / CEO / CFO',
+    'Working Professional / Engineer',
+    'Academician / Professor / Researcher',
+    'Consultant / Strategy Advisor',
+    'Financial Advisor / Chartered Accountant'
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -253,19 +256,19 @@ export default function LoginAuth({
             type="button"
             onClick={() => { setActiveTab('register'); setErrorMsg(''); setSuccessMsg(''); }}
             className={`flex-1 py-3 text-xs font-mono font-bold tracking-wider border-b-2 text-center transition-colors cursor-pointer ${
-              activeTab === 'register' ? 'text-indigo-400 border-indigo-500 bg-slate-900/50' : 'text-slate-500 border-transparent hover:text-slate-350'
+              activeTab === 'register' ? 'text-indigo-400 border-indigo-500 bg-slate-900/55' : 'text-slate-500 border-transparent hover:text-slate-350'
             }`}
           >
-            REGISTER DISCLOSURE
+            REGISTER
           </button>
           <button
             type="button"
             onClick={() => { setActiveTab('forgot'); setErrorMsg(''); setSuccessMsg(''); }}
             className={`flex-1 py-3 text-xs font-mono font-bold tracking-wider border-b-2 text-center transition-colors cursor-pointer ${
-              activeTab === 'forgot' ? 'text-indigo-400 border-indigo-500 bg-slate-900/50' : 'text-slate-500 border-transparent hover:text-slate-350'
+              activeTab === 'forgot' ? 'text-indigo-400 border-indigo-500 bg-slate-900/55' : 'text-slate-500 border-transparent hover:text-slate-350'
             }`}
           >
-            RECOVER YOUR ACCOUNT
+            RECOVER ACCOUNT
           </button>
         </div>
 
@@ -531,9 +534,9 @@ export default function LoginAuth({
                     </div>
                   </div>
 
-                  {/* Mobile Number (for discloser recovery) */}
+                  {/* Mobile Number (for account recovery) */}
                   <div className="space-y-1 font-mono">
-                    <label className="text-[10px] text-slate-400 font-mono uppercase block">Mobile Number (For disclosures/recovery)</label>
+                    <label className="text-[10px] text-slate-400 font-mono uppercase block">Mobile Number (For account recovery)</label>
                     <div className="relative">
                       <Phone className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
                       <input

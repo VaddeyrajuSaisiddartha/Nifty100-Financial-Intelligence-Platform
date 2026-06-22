@@ -20,27 +20,6 @@ export default defineConfig(() => {
     },
     build: {
       chunkSizeWarningLimit: 3000,
-      rollupOptions: {
-        output: {
-          manualChunks(id) {
-            if (id.includes('node_modules')) {
-              if (id.includes('three') || id.includes('@react-three')) {
-                return 'three-vendor';
-              }
-              if (id.includes('jspdf')) {
-                return 'pdf-vendor';
-              }
-              if (id.includes('recharts') || id.includes('d3')) {
-                return 'charts-vendor';
-              }
-              if (id.includes('react') || id.includes('scheduler')) {
-                return 'react-core';
-              }
-              return 'vendor';
-            }
-          },
-        },
-      },
     },
   };
 });

@@ -1302,7 +1302,8 @@ Respond with maximum objective insights, formatting the responses clearly with b
 
 
   // --- VITE DEV OR PRODUCTION SERVER INGRESS RULES ---
-  if (process.env.NODE_ENV !== 'production') {
+  const isProd = process.env.NODE_ENV === 'production' || fs.existsSync(path.join(process.cwd(), 'dist'));
+  if (!isProd) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa'

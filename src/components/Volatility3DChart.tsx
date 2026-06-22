@@ -178,6 +178,17 @@ function SceneContainer({
 export default function Volatility3DChart({ dailyLogs, companies, onCompanySelect }: Volatility3DChartProps) {
   const [hoveredItem, setHoveredItem] = useState<VolatileItem | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [webGlSupported, setWebGlSupported] = useState(true);
+
+  useEffect(() => {
+    try {
+      const canvas = document.createElement('canvas');
+      const supported = !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+      setWebGlSupported(supported);
+    } catch (e) {
+      setWebGlSupported(false);
+    }
+  }, []);
 
   // User drag-to-rotate state
   const dragRotation = useRef({ x: 0.65, y: -0.65 });
@@ -255,13 +266,17 @@ export default function Volatility3DChart({ dailyLogs, companies, onCompanySelec
         <div className="flex items-center gap-2">
           <Zap className="h-4 w-4 text-amber-500 animate-pulse" />
           <div className="leading-tight">
-            <h3 className="font-mono text-xs font-bold text-white uppercase tracking-wider">3D Volatility Spatial Matrix</h3>
-            <p className="text-[10px] text-slate-500 font-sans">High-movement BSI assets mapped to dimensional spatial volume</p>
+            <h3 className="font-mono text-xs font-bold text-white uppercase tracking-wider">
+              {webGlSupported ? '3D Volatility Spatial Matrix' : 'Interactive Volatility Matrix'}
+            </h3>
+            <p className="text-[10px] text-slate-500 font-sans">
+              {webGlSupported ? 'High-movement BSI assets mapped to dimensional spatial volume' : 'Top operating volatility metrics list with adaptive change ratios'}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[9px] px-2 py-0.5 rounded bg-amber-950/40 border border-amber-900/30 text-amber-400 font-mono flex items-center gap-1">
-            THREE.JS ACCELERATED
+            {webGlSupported ? 'THREE.JS ACCELERATED' : 'SENSITIVE 2D VOLATILITY MAP'}
           </span>
         </div>
       </div>
@@ -274,22 +289,53 @@ export default function Volatility3DChart({ dailyLogs, companies, onCompanySelec
         onMouseUp={handleMouseUpOrLeave}
         onMouseLeave={handleMouseUpOrLeave}
       >
-        <Canvas
-          camera={{ position: [0, 9.5, 14.5], fov: 42 }}
-          style={{ width: '100%', height: '100%' }}
-        >
-          {/* Ambient space atmosphere illumination */}
-          <ambientLight intensity={0.52} />
-          <pointLight position={[10, 15, 10]} intensity={1.5} />
-          <directionalLight position={[-8, 12, -4]} intensity={0.65} />
-          
-          <SceneContainer
-            items={activeVolatilityList}
-            onHover={setHoveredItem}
-            onSelect={onCompanySelect}
-            dragRotation={dragRotation}
-          />
-        </Canvas>
+        {webGlSupported ? (
+          <Canvas
+            camera={{ position: [0, 9.5, 14.5], fov: 42 }}
+            style={{ width: '100%', height: '100%' }}
+          >
+            {/* Ambient space atmosphere illumination */}
+            <ambientLight intensity={0.52} />
+            <pointLight position={[10, 15, 10]} intensity={1.5} />
+            <directionalLight position={[-8, 12, -4]} intensity={0.65} />
+            
+            <SceneContainer
+              items={activeVolatilityList}
+              onHover={setHoveredItem}
+              onSelect={onCompanySelect}
+              dragRotation={dragRotation}
+            />
+          </Canvas>
+        ) : (
+          <div className="absolute inset-0 p-5 overflow-y-auto bg-slate-950 flex flex-col justify-between">
+            <div className="space-y-2">
+              <span className="text-[9px] text-slate-500 font-mono block uppercase">Top Volatile Assets list based on operating change metrics</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                {activeVolatilityList.slice(0, 12).map((item) => (
+                  <div
+                    key={item.symbol}
+                    onMouseEnter={() => setHoveredItem(item)}
+                    onMouseLeave={() => setHoveredItem(null)}
+                    onClick={() => onCompanySelect(item.symbol)}
+                    className="p-3 bg-slate-900 border border-slate-800 hover:border-indigo-500 rounded-xl transition-all cursor-pointer hover:bg-slate-850 flex items-center justify-between"
+                  >
+                    <div>
+                      <h4 className="font-mono text-xs font-bold text-white tracking-wider">{item.symbol}</h4>
+                      <p className="text-[10px] text-slate-400 truncate max-w-[130px]">{item.name}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className={`inline-flex items-center gap-0.5 text-xs font-bold font-mono px-2 py-0.5 rounded ${
+                        item.direction === 'up' ? 'text-emerald-450 bg-emerald-950/40' : 'text-rose-400 bg-rose-950/40'
+                      }`}>
+                        {item.direction === 'up' ? '▲' : '▼'} {item.percentage}%
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Dynamic Tooltip overlaid inside Canvas container when hovered */}
         {hoveredItem ? (
