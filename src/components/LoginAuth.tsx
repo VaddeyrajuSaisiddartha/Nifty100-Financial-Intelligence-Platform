@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { UserPlus, LogIn, ShieldAlert, Key, User as UserIcon, HelpCircle, Eye, EyeOff, Lock, Phone } from 'lucide-react';
 
 interface LoginAuthProps {
-  onLoginSuccess: (user: any, token: string) => void;
+  onLoginSuccess: (user: any, token: string, rememberMe: boolean) => void;
 }
 
 export default function LoginAuth({
@@ -14,6 +14,7 @@ export default function LoginAuth({
   const [mobileNumber, setMobileNumber] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   
   // High-Security Personal Context fields
   const [fullName, setFullName] = useState('');
@@ -154,12 +155,12 @@ export default function LoginAuth({
         if (activeTab === 'register') {
           setSuccessMsg('Account authorized successfully! Loading secure workspace...');
           setTimeout(() => {
-            onLoginSuccess(resData.user, resData.token);
+            onLoginSuccess(resData.user, resData.token, rememberMe);
           }, 1200);
         } else {
           setSuccessMsg('Authentication signature verified. Loading sandbox...');
           setTimeout(() => {
-            onLoginSuccess(resData.user, resData.token);
+            onLoginSuccess(resData.user, resData.token, rememberMe);
           }, 1000);
         }
       }
@@ -399,6 +400,8 @@ export default function LoginAuth({
                         onChange={(e) => setFullName(e.target.value)}
                         className="w-full bg-slate-950 border border-slate-805 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-slate-605 focus:outline-none focus:border-sky-500 transition-colors font-mono"
                         required
+                        autoComplete="off"
+                        name="login-username"
                       />
                     </div>
                   </div>
@@ -424,6 +427,8 @@ export default function LoginAuth({
                         onChange={(e) => setPassword(e.target.value)}
                         className="w-full bg-slate-950 border border-slate-805 rounded-xl pl-10 pr-10 py-3 text-xs text-white placeholder-slate-605 focus:outline-none focus:border-sky-500 transition-colors font-mono"
                         required
+                        autoComplete="new-password"
+                        name="login-password"
                       />
                       <button
                         type="button"
@@ -433,6 +438,23 @@ export default function LoginAuth({
                         {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
                       </button>
                     </div>
+                  </div>
+
+                  {/* Remember Me Option */}
+                  <div className="flex items-center gap-2 pt-1 select-none" id="remember-me-option">
+                    <input
+                      type="checkbox"
+                      id="rememberMeCheckbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 rounded bg-slate-950 border border-slate-805 text-indigo-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-indigo-500"
+                    />
+                    <label
+                      htmlFor="rememberMeCheckbox"
+                      className="text-[10px] text-slate-400 font-mono tracking-wide cursor-pointer hover:text-slate-350 transition-colors uppercase"
+                    >
+                      Remember session on this device
+                    </label>
                   </div>
                 </div>
               )}
@@ -452,6 +474,7 @@ export default function LoginAuth({
                         onChange={(e) => setFullName(e.target.value)}
                         className="w-full bg-slate-950 border border-slate-805 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-slate-605 focus:outline-none focus:border-sky-500 transition-colors font-mono"
                         required
+                        autoComplete="off"
                       />
                     </div>
                   </div>
@@ -468,6 +491,7 @@ export default function LoginAuth({
                         onChange={(e) => setPassword(e.target.value)}
                         className="w-full bg-slate-950 border border-slate-805 rounded-xl pl-10 pr-10 py-3 text-xs text-white placeholder-slate-605 focus:outline-none focus:border-sky-500 transition-colors font-mono"
                         required
+                        autoComplete="new-password"
                       />
                       <button
                         type="button"
@@ -484,31 +508,31 @@ export default function LoginAuth({
                         <span className="text-[9px] text-slate-400 font-mono uppercase font-bold tracking-wider block">Credential Blueprint:</span>
                         <div className="grid grid-cols-2 gap-2 text-[10px] font-mono leading-none">
                           <div className="flex items-center gap-1.5">
-                            <span className={isMinLength ? "text-emerald-450 font-bold" : "text-rose-500 font-bold"}>
+                            <span className={isMinLength ? "text-emerald-455 font-bold" : "text-rose-500 font-bold"}>
                               {isMinLength ? "✓" : "✗"}
                             </span>
                             <span className={isMinLength ? "text-slate-300" : "text-slate-505"}>8+ Chars</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <span className={hasCapital ? "text-emerald-450 font-bold" : "text-rose-500 font-bold"}>
+                            <span className={hasCapital ? "text-emerald-455 font-bold" : "text-rose-500 font-bold"}>
                               {hasCapital ? "✓" : "✗"}
                             </span>
                             <span className={hasCapital ? "text-slate-300" : "text-slate-505"}>Capital</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <span className={hasSmall ? "text-emerald-450 font-bold" : "text-rose-500 font-bold"}>
+                            <span className={hasSmall ? "text-emerald-455 font-bold" : "text-rose-500 font-bold"}>
                               {hasSmall ? "✓" : "✗"}
                             </span>
                             <span className={hasSmall ? "text-slate-300" : "text-slate-505"}>Lowercase</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <span className={hasNumber ? "text-emerald-450 font-bold" : "text-rose-500 font-bold"}>
+                            <span className={hasNumber ? "text-emerald-455 font-bold" : "text-rose-500 font-bold"}>
                               {hasNumber ? "✓" : "✗"}
                             </span>
                             <span className={hasNumber ? "text-slate-300" : "text-slate-550"}>Number (0-9)</span>
                           </div>
                           <div className="flex items-center gap-1.5 col-span-2 mt-0.5 pt-1 border-t border-slate-900">
-                            <span className={hasSpecial ? "text-emerald-450 font-bold" : "text-rose-500 font-bold"}>
+                            <span className={hasSpecial ? "text-emerald-455 font-bold" : "text-rose-500 font-bold"}>
                               {hasSpecial ? "✓" : "✗"}
                             </span>
                             <span className={hasSpecial ? "text-slate-300" : "text-slate-550"}>Special Char (!, @, #, $, %)</span>
@@ -530,6 +554,7 @@ export default function LoginAuth({
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         className="w-full bg-slate-950 border border-slate-805 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-slate-605 focus:outline-none focus:border-sky-500 transition-colors"
                         required
+                        autoComplete="new-password"
                       />
                     </div>
                   </div>
@@ -546,6 +571,7 @@ export default function LoginAuth({
                         onChange={(e) => setMobileNumber(e.target.value)}
                         className="w-full bg-slate-950 border border-slate-805 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-slate-605 focus:outline-none focus:border-sky-500 transition-colors"
                         required
+                        autoComplete="off"
                       />
                     </div>
                   </div>
@@ -601,6 +627,7 @@ export default function LoginAuth({
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full bg-slate-950 border border-slate-805 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500 transition-all font-mono"
                         required
+                        autoComplete="off"
                       />
                     </div>
                   </div>

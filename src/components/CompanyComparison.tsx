@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Company } from '../types';
-import { GitCompare, Plus, Trash2, ArrowUpDown, ShieldAlert, CheckCircle, TrendingUp, TrendingDown, Scale, HelpCircle } from 'lucide-react';
+import { GitCompare, Plus, Trash2, ArrowUpDown, ShieldAlert, CheckCircle, TrendingUp, TrendingDown, Scale, HelpCircle, Sparkles, Brain } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
 
 interface CompanyComparisonProps {
@@ -13,6 +13,41 @@ export default function CompanyComparison({ companies, onCompanySelect }: Compan
   const [selectedSymbols, setSelectedSymbols] = useState<string[]>(['TCS', 'INFY']);
   const [tickerQuery, setTickerQuery] = useState('');
   const [searchError, setSearchError] = useState<string | null>(null);
+
+  // AI comparison reports state
+  const [aiReport, setAiReport] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  // Clear stale AI report whenever selected target peers list is modified
+  useEffect(() => {
+    setAiReport(null);
+    setAiError(null);
+  }, [selectedSymbols]);
+
+  const triggerAiComparison = async () => {
+    if (selectedSymbols.length === 0) return;
+    setAiLoading(true);
+    setAiError(null);
+    setAiReport(null);
+    try {
+      const response = await fetch('/api/comparison/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbols: selectedSymbols })
+      });
+      const data = await response.json();
+      if (data.analysis) {
+        setAiReport(data.analysis);
+      } else if (data.error) {
+        setAiError(data.error);
+      }
+    } catch (err: any) {
+      setAiError(err.message || "Failed to establish secure gateway with audit model.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   // Auto-calculated fields for detailed premium comparison
   const comparedCompanies = useMemo(() => {
@@ -205,7 +240,8 @@ export default function CompanyComparison({ companies, onCompanySelect }: Compan
       </div>
 
       {comparedCompanies.length > 0 && (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           
           {/* Bento Comparison Table Sheet */}
           <div className="xl:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-5 overflow-x-auto space-y-4">
@@ -383,6 +419,73 @@ export default function CompanyComparison({ companies, onCompanySelect }: Compan
           </div>
 
         </div>
+
+        {/* AI Comparison Assistant panel */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mt-6 space-y-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-slate-850 pb-3">
+            <div>
+              <h3 className="text-sm font-display font-medium text-white flex items-center gap-2">
+                <Brain className="h-4 w-4 text-indigo-400 animate-pulse" />
+                AI Portfolio Peer Analytics & Comparative Assessment
+              </h3>
+              <p className="text-[11px] text-slate-500 font-sans">
+                Deep intelligence modeling comparing ROCE return efficiency, fiduciary risk, and asset safety index
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={aiLoading || selectedSymbols.length === 0}
+              onClick={triggerAiComparison}
+              className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-sky-600 hover:from-indigo-500 hover:to-sky-500 text-white font-mono text-xs font-bold rounded-lg cursor-pointer transition-all shrink-0 flex items-center justify-center gap-1.5 disabled:opacity-55 disabled:cursor-not-allowed shadow-md shadow-indigo-950"
+            >
+              {aiLoading ? (
+                <>
+                  <Brain className="h-3.5 w-3.5 animate-spin text-indigo-200" />
+                  <span>AUDITING PEERS...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+                  <span>GENERATE AI INSIGHTS</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {aiLoading && (
+            <div className="bg-slate-950 rounded-xl p-8 border border-slate-850 flex flex-col items-center justify-center space-y-3">
+              <Brain className="h-8 w-8 text-indigo-500 animate-pulse" />
+              <p className="text-slate-400 text-xs animate-pulse">Running advanced institutional comparison matrix analytics via Gemini...</p>
+              <div className="w-48 bg-slate-900 h-1 rounded-full overflow-hidden">
+                <div className="bg-gradient-to-r from-indigo-500 to-sky-500 h-full w-1/3 animate-ping"></div>
+              </div>
+            </div>
+          )}
+
+          {aiError && (
+            <div className="bg-rose-950/20 border border-rose-900/30 text-rose-400 p-4 rounded-xl text-xs flex items-center gap-2 animate-fade-in">
+              <ShieldAlert className="h-4 w-4 text-rose-450" />
+              <span>{aiError}</span>
+            </div>
+          )}
+
+          {aiReport ? (
+            <div className="bg-slate-950 rounded-xl p-5 border border-slate-850 overflow-x-auto animate-fade-in">
+              <div className="whitespace-pre-wrap leading-relaxed font-sans text-xs prose prose-invert max-w-none text-slate-300">
+                {aiReport}
+              </div>
+            </div>
+          ) : !aiLoading && (
+            <div className="bg-slate-950/45 rounded-xl p-8 border border-slate-850/60 flex flex-col items-center justify-center text-center space-y-2">
+              <Sparkles className="h-6 w-6 text-slate-650" />
+              <h4 className="text-slate-400 font-medium text-xs">AI Evaluation Awaiting Request</h4>
+              <p className="text-slate-500 max-w-md text-[11px] leading-relaxed font-sans">
+                Click the button above to trigger the Nifty AI Engine. The platform will analyze the ledger matrices of {selectedSymbols.join(', ')} side-by-side to deliver custom institutional strategic takeaways.
+              </p>
+            </div>
+          )}
+        </div>
+      </>
       )}
     </div>
   );

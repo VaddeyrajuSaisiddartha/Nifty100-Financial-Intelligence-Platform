@@ -22,6 +22,8 @@ export default function App() {
   const [currentTab, setTab] = useState<string>('dashboard');
   const [selectedCompanySymbol, setSelectedCompanySymbol] = useState<string | null>(null);
 
+  const getAuthToken = () => localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+
   // Theme support & saved chat streams
   const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('niq_theme') as 'dark' | 'light') || 'dark');
   const [savedChats, setSavedChats] = useState<{ id: string; title: string; history: Message[]; updatedAt: string }[]>([]);
@@ -38,7 +40,7 @@ export default function App() {
   }, [theme]);
 
   const fetchSavedChats = async () => {
-    const savedToken = localStorage.getItem('auth_token');
+    const savedToken = getAuthToken();
     if (!savedToken) return;
     try {
       const response = await fetch('/api/chats', {
@@ -117,8 +119,8 @@ export default function App() {
 
   // On mount check Session Profile & populate listings
   useEffect(() => {
-    const savedToken = localStorage.getItem('auth_token');
-    const savedUser = localStorage.getItem('auth_user');
+    const savedToken = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+    const savedUser = localStorage.getItem('auth_user') || sessionStorage.getItem('auth_user');
     
     if (savedToken && savedUser) {
       try {
@@ -126,6 +128,8 @@ export default function App() {
       } catch (e) {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('auth_user');
+        sessionStorage.removeItem('auth_token');
+        sessionStorage.removeItem('auth_user');
       }
     }
 
@@ -143,7 +147,11 @@ export default function App() {
       .then(resData => {
         if (resData.username) {
           setUser(resData);
-          localStorage.setItem('auth_user', JSON.stringify(resData));
+          if (localStorage.getItem('auth_token')) {
+            localStorage.setItem('auth_user', JSON.stringify(resData));
+          } else {
+            sessionStorage.setItem('auth_user', JSON.stringify(resData));
+          }
         }
       })
       .catch(err => {
@@ -151,6 +159,8 @@ export default function App() {
         if (savedToken) {
           localStorage.removeItem('auth_token');
           localStorage.removeItem('auth_user');
+          sessionStorage.removeItem('auth_token');
+          sessionStorage.removeItem('auth_user');
           setUser(null);
         }
       });
@@ -178,7 +188,7 @@ export default function App() {
   }, []);
 
   const fetchWatchlist = (token?: string) => {
-    const activeToken = token || localStorage.getItem('auth_token');
+    const activeToken = token || getAuthToken();
     const headers: Record<string, string> = {};
     if (activeToken) {
       headers['Authorization'] = `Bearer ${activeToken}`;
@@ -216,7 +226,7 @@ export default function App() {
 
   // Toggle watchlist item securely with DB update
   const handleToggleWatchlist = async (symbol: string) => {
-    const savedToken = localStorage.getItem('auth_token');
+    const savedToken = getAuthToken();
     if (!user || !savedToken) {
       // Force direct alert of login required to protect analyst entries
       setTab('auth');
@@ -244,7 +254,7 @@ export default function App() {
   };
 
   const handleSaveChat = async (title: string, messagesList: Message[]) => {
-    const activeToken = localStorage.getItem('auth_token');
+    const activeToken = getAuthToken();
     if (!activeToken) return;
     try {
       const response = await fetch('/api/chats', {
@@ -264,7 +274,7 @@ export default function App() {
   };
 
   const handleDeleteSavedChat = async (id: string) => {
-    const activeToken = localStorage.getItem('auth_token');
+    const activeToken = getAuthToken();
     if (!activeToken) return;
     try {
       const response = await fetch(`/api/chats/${id}`, {
@@ -286,6 +296,8 @@ export default function App() {
       await fetch('/api/logout', { method: 'POST' });
       localStorage.removeItem('auth_token');
       localStorage.removeItem('auth_user');
+      sessionStorage.removeItem('auth_token');
+      sessionStorage.removeItem('auth_user');
       setUser(null);
       setWatchlist([]);
       setTab('dashboard');
@@ -474,10 +486,15 @@ export default function App() {
       case 'auth':
         return (
           <LoginAuth
-            onLoginSuccess={(userData, token) => {
+            onLoginSuccess={(userData, token, rememberMe) => {
               setUser(userData);
-              localStorage.setItem('auth_token', token);
-              localStorage.setItem('auth_user', JSON.stringify(userData));
+              if (rememberMe) {
+                localStorage.setItem('auth_token', token);
+                localStorage.setItem('auth_user', JSON.stringify(userData));
+              } else {
+                sessionStorage.setItem('auth_token', token);
+                sessionStorage.setItem('auth_user', JSON.stringify(userData));
+              }
               fetchWatchlist(token);
               setTab('dashboard');
             }}
@@ -582,10 +599,15 @@ export default function App() {
         
         <div className="w-full max-w-lg p-4 relative z-10">
           <LoginAuth
-            onLoginSuccess={(userData, token) => {
+            onLoginSuccess={(userData, token, rememberMe) => {
               setUser(userData);
-              localStorage.setItem('auth_token', token);
-              localStorage.setItem('auth_user', JSON.stringify(userData));
+              if (rememberMe) {
+                localStorage.setItem('auth_token', token);
+                localStorage.setItem('auth_user', JSON.stringify(userData));
+              } else {
+                sessionStorage.setItem('auth_token', token);
+                sessionStorage.setItem('auth_user', JSON.stringify(userData));
+              }
               fetchWatchlist(token);
               setTab('dashboard');
             }}
