@@ -1,4 +1,4 @@
-# 🚀 Nifty100 Financial Intelligence Platform
+# Nifty100 Financial Intelligence Platform
 
 ## 🌐 Live Demo
 
