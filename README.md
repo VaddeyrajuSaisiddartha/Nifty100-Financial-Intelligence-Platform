@@ -6,7 +6,7 @@ https://nifty-100-intelligence-549099183935.asia-southeast1.run.app
 
 ## 📌 Project Overview
 
-Nifty100 Financial Intelligence Platform is a full-stack financial analytics and business intelligence system designed to analyze Nifty100 companies using advanced data engineering, data warehousing, interactive dashboards, and investor-focused analytics.
+Nifty100 Financial Intelligence Platform is a full-stack financial analytics and business intelligence system designed to analyze Nifty100 companies using advanced data engineering, data warehousing, interactive dashboards, and investor-focused analytics. 
 
 The platform enables users to explore company performance, sector-wise analysis, financial trends, and investment insights through an intuitive web interface and Power BI dashboards. 
 
