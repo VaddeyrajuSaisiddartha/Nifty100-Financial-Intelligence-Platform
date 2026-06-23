@@ -1,8 +1,7 @@
 # 🚀 Nifty100 Financial Intelligence Platform
 
 ## 🌐 Live Demo
-
-https://nifty-100-intelligence-549099183935.asia-southeast1.run.app/
+https://nifty-100-intelligence-549099183935.asia-southeast1.run.app
 
 ---
 
